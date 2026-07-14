@@ -1,0 +1,41 @@
+<h2>Add User</h2>
+
+
+<form [formGroup]="userForm" (ngSubmit)="saveUser()">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>PAN Number</mat-label>
+    <input matInput formControlName="pan">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Password</mat-label>
+    <input matInput type="password" formControlName="password">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Full Name</mat-label>
+    <input matInput formControlName="name">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Mobile Number</mat-label>
+    <input matInput formControlName="mobile">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Email</mat-label>
+    <input matInput type="email" formControlName="email">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Date of Birth</mat-label>
+    <input matInput type="date" formControlName="dob">
+  </mat-form-field>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit">
+    Save User
+  </button>
+</form>

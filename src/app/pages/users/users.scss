@@ -1,0 +1,62 @@
+.page-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+}
+
+.users-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1rem;
+  box-shadow: 0 18px 60px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 640px;
+}
+
+.users-table th,
+.users-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.users-table th {
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.users-table td {
+  color: #0f172a;
+  background: #fbfdff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.users-table tbody tr:hover td {
+  background: #f8fbff;
+}
+
+.open-button {
+  min-width: 96px;
+}
+
+.empty-state {
+  padding: 2rem 1.25rem;
+  color: #64748b;
+  text-align: center;
+  font-size: 0.98rem;
+}

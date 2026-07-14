@@ -1,0 +1,46 @@
+<div class="page-header">
+
+  <h2>Users</h2>
+
+  <button
+      mat-flat-button
+      color="primary"
+      routerLink="/add-user">
+
+      Add User
+
+  </button>
+
+</div>
+
+<table border="1" width="100%">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>PAN</th>
+<th>Name</th>
+<th>Mobile</th>
+<th>Email</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr *ngFor="let user of users">
+
+<td>{{user.id}}</td>
+<td>{{user.pan}}</td>
+<td>{{user.name}}</td>
+<td>{{user.mobile}}</td>
+<td>{{user.email}}</td>
+
+</tr>
+
+</tbody>
+
+</table>
