@@ -22,8 +22,7 @@
 <th>ID</th>
 <th>PAN</th>
 <th>Name</th>
-<th>Mobile</th>
-<th>Email</th>
+<th>action</th>
 
 </tr>
 
@@ -36,8 +35,12 @@
 <td>{{user.id}}</td>
 <td>{{user.pan}}</td>
 <td>{{user.name}}</td>
-<td>{{user.mobile}}</td>
-<td>{{user.email}}</td>
+<td><button
+  mat-raised-button
+  color="primary"
+  (click)="openIncomeTaxPortal(user.id)">
+  Open Income Tax Portal
+</button></td>
 
 </tr>
 

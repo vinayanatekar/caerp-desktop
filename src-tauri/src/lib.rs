@@ -7,6 +7,7 @@ use commands::{
     delete_client,
     get_clients,
     update_client,
+    open_income_tax
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -16,7 +17,8 @@ pub fn run() {
     add_client,
     get_clients,
     update_client,
-    delete_client
+    delete_client,
+    open_income_tax
 ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -34,3 +36,5 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+

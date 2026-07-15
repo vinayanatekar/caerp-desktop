@@ -1,4 +1,5 @@
 use rusqlite::{params, Connection};
+use std::process::Command;
 use tauri::command;
 
 use crate::models::User;
@@ -72,3 +73,42 @@ pub fn update_client() -> Result<String, String> {
 pub fn delete_client() -> Result<String, String> {
     Ok("delete_client called".to_string())
 }
+#[command]
+pub fn open_income_tax(user_id: i64) -> Result<String, String> {
+    let conn = Connection::open("caerp.db")
+        .map_err(|e| e.to_string())?;
+
+    let mut stmt = conn
+        .prepare("SELECT pan, password FROM clients WHERE id = ?1")
+        .map_err(|e| e.to_string())?;
+
+    let (pan, password): (String, String) = stmt
+        .query_row(params![user_id], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })
+        .map_err(|e| e.to_string())?;
+
+    // Determine the working directory containing the automation folder
+    let mut base_path = std::env::current_dir().map_err(|e| e.to_string())?;
+    if !base_path.join("automation").join("login.ts").exists() {
+        if let Some(parent) = base_path.parent() {
+            if parent.join("automation").join("login.ts").exists() {
+                base_path = parent.to_path_buf();
+            }
+        }
+    }
+
+    let cmd = if cfg!(target_os = "windows") { "npx.cmd" } else { "npx" };
+
+    Command::new(cmd)
+        .arg("tsx")
+        .arg("automation/login.ts")
+        .current_dir(&base_path)
+        .env("PAN", &pan)
+        .env("PASSWORD", &password)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    Ok("Browser Opened".to_string())
+}
+

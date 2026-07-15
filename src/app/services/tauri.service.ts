@@ -13,5 +13,7 @@ export class TauriService {
   async getClients(): Promise<any[]> {
     return await invoke('get_clients');
   }
-
+  async openIncomeTax(userId: number) {
+    return await invoke('open_income_tax', { userId });
+  }
 }

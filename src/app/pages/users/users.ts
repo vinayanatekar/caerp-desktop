@@ -34,4 +34,12 @@ export class Users implements OnInit {
 
   }
 
+  async openIncomeTaxPortal(userId: number) {
+    try {
+      await this.tauriService.openIncomeTax(userId);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
 }
