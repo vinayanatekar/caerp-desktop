@@ -12,6 +12,9 @@ import {
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { RouterLink } from '@angular/router';
 
 import { TauriService } from '../../services/tauri.service';
 
@@ -23,7 +26,10 @@ import { TauriService } from '../../services/tauri.service';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule
+    MatButtonModule,
+    MatIconModule,
+    MatCardModule,
+    RouterLink
   ],
   templateUrl: './add-user.html',
   styleUrl: './add-user.scss'
@@ -42,14 +48,13 @@ export class AddUser {
         '',
         [
           Validators.required,
-          Validators.minLength(10),
-          Validators.maxLength(10)
+          Validators.pattern(/^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/)
         ]
       ],
       password: ['', Validators.required],
       name: ['', Validators.required],
-      mobile: [''],
-      email: [''],
+      mobile: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+      email: ['', [Validators.email]],
       dob: ['']
     });
   }

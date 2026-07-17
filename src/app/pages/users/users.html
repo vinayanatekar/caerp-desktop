@@ -1,49 +1,44 @@
-<div class="page-header">
+<div class="users-container animate-fade-in">
+    <div class="page-header">
+        <h2>Client Directory</h2>
+        <button mat-flat-button color="primary" routerLink="/add-user">
+            <mat-icon>person_add</mat-icon> Add Client
+        </button>
+    </div>
 
-  <h2>Users</h2>
-
-  <button
-      mat-flat-button
-      color="primary"
-      routerLink="/add-user">
-
-      Add User
-
-  </button>
-
+    <div class="table-card">
+        <div class="table-container">
+            <table class="normal-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>PAN</th>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                        <th>Date of Birth</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let user of users">
+                        <td>{{ user.id }}</td>
+                        <td class="code">{{ user.pan }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.mobile || '-' }}</td>
+                        <td>{{ user.email || '-' }}</td>
+                        <td>{{ user.dob || '-' }}</td>
+                        <td>
+                            <button mat-raised-button color="primary" (click)="openIncomeTaxPortal(user.id)" [disabled]="loadingStates[user.id]">
+                                {{ loadingStates[user.id] ? 'Launching...' : 'Open ITR Portal' }}
+                            </button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="users.length === 0">
+                        <td colspan="7" class="no-data">No clients registered. Click "Add Client" to register one.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-<table border="1" width="100%">
-
-<thead>
-
-<tr>
-
-<th>ID</th>
-<th>PAN</th>
-<th>Name</th>
-<th>action</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<tr *ngFor="let user of users">
-
-<td>{{user.id}}</td>
-<td>{{user.pan}}</td>
-<td>{{user.name}}</td>
-<td><button
-  mat-raised-button
-  color="primary"
-  (click)="openIncomeTaxPortal(user.id)">
-  Open Income Tax Portal
-</button></td>
-
-</tr>
-
-</tbody>
-
-</table>

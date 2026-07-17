@@ -1,10 +1,21 @@
-<div class="sidebar">
-
-    <a routerLink="/">Dashboard</a>
-
-    <a routerLink="/users">Users</a>
-
-    <a routerLink="/add-user">Add User</a>
-
-
+<div class="sidebar animate-fade-in">
+    <div class="brand">
+        <mat-icon class="brand-icon">lan</mat-icon>
+        <span class="brand-name">CAERP Workspace</span>
+    </div>
+    
+    <nav class="nav-links">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <mat-icon>dashboard</mat-icon>
+            <span>Dashboard</span>
+        </a>
+        <a routerLink="/users" routerLinkActive="active" class="nav-link">
+            <mat-icon>people</mat-icon>
+            <span>Clients</span>
+        </a>
+        <a routerLink="/add-user" routerLinkActive="active" class="nav-link">
+            <mat-icon>person_add</mat-icon>
+            <span>Add Client</span>
+        </a>
+    </nav>
 </div>

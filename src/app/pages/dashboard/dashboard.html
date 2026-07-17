@@ -1,1 +1,84 @@
-<p>dashboard works!</p>
+<div class="dashboard-container animate-slide-in">
+    <div class="dashboard-header">
+        <h1>CAERP Analytics</h1>
+        <p>Compliance and client automation log overview</p>
+    </div>
+
+    <!-- Spinner if loading -->
+    <div class="spinner-container" *ngIf="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Loading compliance analytics data...</p>
+    </div>
+
+    <div class="dashboard-content" *ngIf="!loading">
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+            <mat-card class="metric-card glass-card clients">
+                <mat-card-content>
+                    <div class="metric-icon-wrapper">
+                        <mat-icon>people</mat-icon>
+                    </div>
+                    <div class="metric-info">
+                        <span class="value">{{ totalClients }}</span>
+                        <span class="label">Total Registered Clients</span>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+        </div>
+
+        <!-- Layout splits: Left (Recent Clients Space status), Right (Quick Actions) -->
+        <div class="splits-grid">
+            <div class="status-panel glass-card">
+                <div class="panel-header">
+                    <h2>Active Workspaces</h2>
+                    <button mat-button color="primary" routerLink="/users">View All</button>
+                </div>
+                <div class="panel-body">
+                    <div class="client-status-list">
+                        <div class="client-status-item" *ngFor="let client of clients.slice(0,5)">
+                            <div class="client-profile">
+                                <span class="avatar">{{ client.name?.substring(0,2).toUpperCase() }}</span>
+                                <div class="profile-meta">
+                                    <span class="name">{{ client.name }}</span>
+                                    <span class="pan">{{ client.pan }}</span>
+                                </div>
+                            </div>
+                            <div class="status-indicator">
+                                <button mat-raised-button color="primary" (click)="openIncomeTaxPortal(client.id)" [disabled]="loadingStates[client.id]">
+                                    {{ loadingStates[client.id] ? 'Launching...' : 'Open Portal' }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="no-status-data" *ngIf="clients.length === 0">
+                            <mat-icon>people_outline</mat-icon>
+                            <p>No clients registered. Register a client to automate tasks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-panel glass-card">
+                <div class="panel-header">
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="panel-body actions-list">
+                    <button mat-raised-button color="primary" routerLink="/add-user" class="action-card-btn">
+                        <mat-icon>person_add</mat-icon>
+                        <div class="action-desc">
+                            <span class="title">Add Client</span>
+                            <span class="subtitle">Register new tax profile credentials</span>
+                        </div>
+                    </button>
+
+                    <button mat-raised-button color="accent" routerLink="/users" class="action-card-btn">
+                        <mat-icon>launch</mat-icon>
+                        <div class="action-desc">
+                            <span class="title">Automate Portal</span>
+                            <span class="subtitle">Open headed browser for target client</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
