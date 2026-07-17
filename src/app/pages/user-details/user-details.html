@@ -1,1 +1,65 @@
-<p>user-details works!</p>
+<div class="user-details-container animate-fade-in" *ngIf="client">
+    <div class="page-header">
+        <button mat-stroked-button color="primary" routerLink="/users">
+            <mat-icon>arrow_back</mat-icon> Back to Clients
+        </button>
+        <h2>User Details</h2>
+    </div>
+
+    <div class="details-card-container">
+        <!-- Client Profile Box -->
+        <div class="info-section">
+            <div class="info-row">
+                <span class="label">PAN</span>
+                <span class="value code">{{ client.pan }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Name</span>
+                <span class="value">{{ client.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Mobile</span>
+                <span class="value">{{ client.mobile || '-' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Email</span>
+                <span class="value">{{ client.email || '-' }}</span>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Portal Session Status Box -->
+        <div class="status-section">
+            <div class="status-indicator-row">
+                <span class="label">Portal Status</span>
+                <div class="status-badge" [ngClass]="session?.session_status?.toLowerCase()?.replace(' ', '-')">
+                    <span class="dot"></span>
+                    <span class="text">{{ session?.session_status || 'Not Checked' }}</span>
+                </div>
+            </div>
+            <div class="status-row">
+                <span class="label">Last Checked</span>
+                <span class="value">{{ session?.last_checked_time || 'Never' }}</span>
+            </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Automation Action Buttons Grid -->
+        <div class="actions-section">
+            <button mat-raised-button color="primary" (click)="triggerAction('portal')" [disabled]="loading">
+                Open Portal
+            </button>
+            <button mat-raised-button color="accent" (click)="triggerAction('ais')" [disabled]="loading">
+                Get AIS
+            </button>
+            <button mat-raised-button color="accent" (click)="triggerAction('tis')" [disabled]="loading">
+                Get TIS
+            </button>
+            <button mat-raised-button color="accent" (click)="triggerAction('26as')" [disabled]="loading">
+                Get 26AS
+            </button>
+        </div>
+    </div>
+</div>

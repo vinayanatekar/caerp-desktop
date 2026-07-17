@@ -7,7 +7,10 @@ use commands::{
     delete_client,
     get_clients,
     update_client,
-    open_income_tax
+    open_income_tax,
+    get_session_status,
+    refresh_session_status,
+    get_client
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -18,7 +21,10 @@ pub fn run() {
     get_clients,
     update_client,
     delete_client,
-    open_income_tax
+    open_income_tax,
+    get_session_status,
+    refresh_session_status,
+    get_client
 ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -31,10 +37,22 @@ pub fn run() {
 
             database::init_database().expect("Failed to initialize database");
 
+            // Start the background Playwright browser daemon on startup
+            let app_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let _ = commands::start_automation_daemon(&app_handle);
+            });
+
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, event| match event {
+            tauri::RunEvent::Exit => {
+                let _ = commands::shutdown_daemon();
+            }
+            _ => {}
+        });
 }
 
 

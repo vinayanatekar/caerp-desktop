@@ -29,8 +29,8 @@
                         <td>{{ user.email || '-' }}</td>
                         <td>{{ user.dob || '-' }}</td>
                         <td>
-                            <button mat-raised-button color="primary" (click)="openIncomeTaxPortal(user.id)" [disabled]="loadingStates[user.id]">
-                                {{ loadingStates[user.id] ? 'Launching...' : 'Open ITR Portal' }}
+                            <button mat-raised-button color="primary" [routerLink]="['/users', user.id]">
+                                Open Space
                             </button>
                         </td>
                     </tr>
