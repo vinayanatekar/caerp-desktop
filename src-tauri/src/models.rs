@@ -23,3 +23,10 @@ pub struct PortalSession {
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoogleSearchResult {
+    pub title: String,
+    pub link: String,
+    pub snippet: String,
+}

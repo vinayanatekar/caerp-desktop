@@ -5,7 +5,7 @@ use std::net::TcpStream;
 use std::thread;
 use tauri::{command, AppHandle, Emitter};
 
-use crate::models::{User, PortalSession};
+use crate::models::{User, PortalSession, GoogleSearchResult};
 
 #[derive(serde::Serialize, Clone)]
 struct AutomationPayload {
@@ -82,8 +82,29 @@ pub fn update_client() -> Result<String, String> {
 pub fn delete_client() -> Result<String, String> {
     Ok("delete_client called".to_string())
 }
+fn is_valid_pan(pan: &str) -> bool {
+    if pan.len() != 10 {
+        return false;
+    }
+    let chars: Vec<char> = pan.chars().collect();
+    for i in 0..5 {
+        if !chars[i].is_ascii_alphabetic() {
+            return false;
+        }
+    }
+    for i in 5..9 {
+        if !chars[i].is_ascii_digit() {
+            return false;
+        }
+    }
+    if !chars[9].is_ascii_alphabetic() {
+        return false;
+    }
+    true
+}
+
 #[command]
-pub fn open_income_tax(user_id: i64, target: String) -> Result<String, String> {
+pub fn open_income_tax(app: AppHandle, user_id: i64, target: String) -> Result<String, String> {
     let conn = Connection::open("caerp.db")
         .map_err(|e| e.to_string())?;
 
@@ -96,6 +117,19 @@ pub fn open_income_tax(user_id: i64, target: String) -> Result<String, String> {
             Ok((row.get(0)?, row.get(1)?))
         })
         .map_err(|e| e.to_string())?;
+
+    // Validate User Information
+    if pan.trim().is_empty() {
+        return Err("Validation Error: PAN is required.".to_string());
+    }
+    if password.trim().is_empty() {
+        return Err("Validation Error: Password is required.".to_string());
+    }
+    if !is_valid_pan(&pan) {
+        return Err("Validation Error: Invalid PAN format. A PAN must consist of 5 letters, 4 digits, and 1 letter (e.g., ABCDE1234F).".to_string());
+    }
+
+    ensure_daemon_running(&app)?;
 
     // Send action trigger request to the running Node.js HTTP daemon
     let mut stream = TcpStream::connect("127.0.0.1:30100")
@@ -193,6 +227,22 @@ pub fn start_automation_daemon(app: &AppHandle) -> Result<(), String> {
     });
 
     Ok(())
+}
+
+pub fn ensure_daemon_running(app: &AppHandle) -> Result<(), String> {
+    if TcpStream::connect("127.0.0.1:30100").is_ok() {
+        return Ok(());
+    }
+    println!("Automation daemon not reachable on 127.0.0.1:30100. Auto-launching daemon...");
+    let _ = start_automation_daemon(app);
+    for _ in 0..15 {
+        thread::sleep(std::time::Duration::from_millis(500));
+        if TcpStream::connect("127.0.0.1:30100").is_ok() {
+            println!("Automation daemon successfully initialized on port 30100.");
+            return Ok(());
+        }
+    }
+    Err("Failed to start automation daemon on port 30100. Make sure Node.js is installed.".to_string())
 }
 
 pub fn shutdown_daemon() -> Result<(), String> {
@@ -294,7 +344,7 @@ pub fn get_session_status(user_id: i64) -> Result<PortalSession, String> {
 }
 
 #[command]
-pub fn refresh_session_status(user_id: i64) -> Result<PortalSession, String> {
+pub fn refresh_session_status(app: AppHandle, user_id: i64) -> Result<PortalSession, String> {
     let conn = Connection::open("caerp.db")
         .map_err(|e| e.to_string())?;
 
@@ -305,6 +355,8 @@ pub fn refresh_session_status(user_id: i64) -> Result<PortalSession, String> {
     let pan: String = client_stmt
         .query_row(params![user_id], |r| r.get(0))
         .map_err(|e| e.to_string())?;
+
+    ensure_daemon_running(&app)?;
 
     // Trigger TCP connection to daemon /check
     let mut stream = TcpStream::connect("127.0.0.1:30100")
@@ -349,4 +401,79 @@ pub fn refresh_session_status(user_id: i64) -> Result<PortalSession, String> {
 
     get_or_create_session(&conn, user_id)
 }
+
+#[command]
+pub fn search_google_user(app: AppHandle, user_id: i64) -> Result<Vec<GoogleSearchResult>, String> {
+    let conn = Connection::open("caerp.db")
+        .map_err(|e| e.to_string())?;
+
+    let mut stmt = conn
+        .prepare("SELECT name, pan FROM clients WHERE id = ?1")
+        .map_err(|e| e.to_string())?;
+
+    let (name, pan): (String, String) = stmt
+        .query_row(params![user_id], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })
+        .map_err(|e| e.to_string())?;
+
+    if name.trim().is_empty() {
+        return Err("Validation Error: Client name is empty.".to_string());
+    }
+
+    ensure_daemon_running(&app)?;
+
+    let mut stream = TcpStream::connect("127.0.0.1:30100")
+        .map_err(|e| format!("Failed to connect to automation daemon: {}", e))?;
+
+    let json_body = serde_json::json!({
+        "name": name,
+        "pan": pan
+    }).to_string();
+
+    let request = format!(
+        "POST /search_google HTTP/1.1\r\n\
+         Host: 127.0.0.1:30100\r\n\
+         Content-Type: application/json\r\n\
+         Content-Length: {}\r\n\
+         Connection: close\r\n\
+         \r\n\
+         {}",
+        json_body.len(),
+        json_body
+    );
+
+    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+
+    let mut response_str = String::new();
+    use std::io::Read;
+    stream.read_to_string(&mut response_str).map_err(|e| e.to_string())?;
+
+    let body_str = match response_str.find("\r\n\r\n") {
+        Some(index) => &response_str[index + 4..],
+        None => &response_str,
+    };
+
+    let json_str = match (body_str.find('{'), body_str.rfind('}')) {
+        (Some(start), Some(end)) if start <= end => &body_str[start..=end],
+        _ => body_str.trim(),
+    };
+
+    #[derive(serde::Deserialize)]
+    struct SearchResponse {
+        status: String,
+        results: Option<Vec<GoogleSearchResult>>,
+        error: Option<String>,
+    }
+
+    let parsed: SearchResponse = serde_json::from_str(json_str)
+        .map_err(|e| format!("Failed to parse response from daemon: {}. Body: {}", e, json_str))?;
+
+    if parsed.status == "success" {
+        Ok(parsed.results.unwrap_or_default())
+    } else {
+        Err(parsed.error.unwrap_or_else(|| "Google search failed".to_string()))
+    }
+}
+
 

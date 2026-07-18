@@ -23,7 +23,10 @@ export class UserDetails implements OnInit, OnDestroy {
   client: any = null;
   session: any = null;
   loading = false;
-  
+  searchingGoogle = false;
+  showGoogleModal = false;
+  googleSearchResults: Array<{ title: string; link: string; snippet: string }> = [];
+
   private unlistenFn: any = null;
 
   constructor(
@@ -95,7 +98,12 @@ export class UserDetails implements OnInit, OnDestroy {
       }, 5000);
     } catch (err: any) {
       console.error(err);
-      alert('Automation failed to trigger: ' + (err.message || err));
+      const errMsg = typeof err === 'string' ? err : (err.message || JSON.stringify(err));
+      if (errMsg.includes('Validation Error')) {
+        alert(errMsg);
+      } else {
+        alert('Automation failed to trigger: ' + errMsg);
+      }
     } finally {
       this.loading = false;
       this.cdr.detectChanges();
@@ -109,5 +117,32 @@ export class UserDetails implements OnInit, OnDestroy {
     } catch (err) {
       console.error('Failed to refresh session status:', err);
     }
+  }
+
+  async onSearchGoogleUser() {
+    if (!this.client || !this.client.name) {
+      alert('User name is missing.');
+      return;
+    }
+
+    this.searchingGoogle = true;
+    this.cdr.detectChanges();
+
+    try {
+      const results = await this.tauriService.searchGoogleUser(this.userId);
+      this.googleSearchResults = results;
+      this.showGoogleModal = true;
+    } catch (err: any) {
+      console.error('Google search failed:', err);
+      const errMsg = typeof err === 'string' ? err : (err.message || JSON.stringify(err));
+      alert('Google search failed: ' + errMsg);
+    } finally {
+      this.searchingGoogle = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  closeGoogleModal() {
+    this.showGoogleModal = false;
   }
 }

@@ -48,18 +48,72 @@
 
         <!-- Automation Action Buttons Grid -->
         <div class="actions-section">
-            <button mat-raised-button color="primary" (click)="triggerAction('portal')" [disabled]="loading">
+            <button mat-raised-button color="primary" (click)="triggerAction('portal')" [disabled]="loading || searchingGoogle">
                 Open Portal
             </button>
-            <button mat-raised-button color="accent" (click)="triggerAction('ais')" [disabled]="loading">
+            <button mat-raised-button color="accent" (click)="triggerAction('ais')" [disabled]="loading || searchingGoogle">
                 Get AIS
             </button>
-            <button mat-raised-button color="accent" (click)="triggerAction('tis')" [disabled]="loading">
+            <button mat-raised-button color="accent" (click)="triggerAction('tis')" [disabled]="loading || searchingGoogle">
                 Get TIS
             </button>
-            <button mat-raised-button color="accent" (click)="triggerAction('26as')" [disabled]="loading">
+            <button mat-raised-button color="accent" (click)="triggerAction('26as')" [disabled]="loading || searchingGoogle">
                 Get 26AS
+            </button>
+            <button mat-raised-button class="google-user-btn" (click)="onSearchGoogleUser()" [disabled]="loading || searchingGoogle">
+                <mat-icon>search</mat-icon> Google User
             </button>
         </div>
     </div>
+
+    <!-- Searching Google Loading Modal -->
+    <div class="modal-overlay animate-fade-in" *ngIf="searchingGoogle">
+        <div class="modal-dialog loading-dialog">
+            <div class="google-spinner">
+                <mat-icon class="spinning">sync</mat-icon>
+            </div>
+            <h3>Searching Google with Playwright...</h3>
+            <p>Fetching top 10 search results for <strong>{{ client.name }}</strong></p>
+        </div>
+    </div>
+
+    <!-- Google Search Results Popup Modal -->
+    <div class="modal-overlay animate-fade-in" *ngIf="showGoogleModal">
+        <div class="modal-dialog google-results-dialog">
+            <div class="modal-header">
+                <div class="header-title">
+                    <mat-icon class="google-icon">search</mat-icon>
+                    <h3>Google Search Results for "{{ client.name }}"</h3>
+                </div>
+                <button mat-icon-button (click)="closeGoogleModal()" aria-label="Close">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div *ngIf="googleSearchResults.length === 0" class="no-results">
+                    <p>No organic search results were returned by Playwright.</p>
+                </div>
+
+                <div class="results-list" *ngIf="googleSearchResults.length > 0">
+                    <div class="result-card" *ngFor="let res of googleSearchResults; let i = index">
+                        <div class="result-number">{{ i + 1 }}</div>
+                        <div class="result-content">
+                            <a [href]="res.link" target="_blank" rel="noopener noreferrer" class="result-title">
+                                {{ res.title }}
+                            </a>
+                            <div class="result-link">{{ res.link }}</div>
+                            <p class="result-snippet" *ngIf="res.snippet">{{ res.snippet }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span class="results-count">Top {{ googleSearchResults.length }} result(s) recorded</span>
+                <button mat-raised-button color="primary" (click)="closeGoogleModal()">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
+

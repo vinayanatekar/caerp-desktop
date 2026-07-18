@@ -10,7 +10,8 @@ use commands::{
     open_income_tax,
     get_session_status,
     refresh_session_status,
-    get_client
+    get_client,
+    search_google_user
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,7 +25,8 @@ pub fn run() {
     open_income_tax,
     get_session_status,
     refresh_session_status,
-    get_client
+    get_client,
+    search_google_user
 ])
         .setup(|app| {
             if cfg!(debug_assertions) {

@@ -24,20 +24,24 @@ export class BrowserManager {
     // If browser is active and it is the same client PAN, reuse it
     if ((this.browser || this.context) && this.currentPan === pan) {
       logStatus(`Reusing active browser context for PAN: ${pan || 'default'}`);
-      
-      if (this.page) {
-        try {
-          if (this.page.isClosed()) {
-            logStatus('Active page was closed. Opening a new page in the same context...');
+      try {
+        if (this.page) {
+          try {
+            if (this.page.isClosed()) {
+              logStatus('Active page was closed. Opening a new page in the same context...');
+              this.page = await this.context!.newPage();
+            }
+          } catch (e) {
             this.page = await this.context!.newPage();
           }
-        } catch (e) {
-          this.page = await this.context!.newPage();
+        } else if (this.context) {
+          this.page = await this.context.newPage();
         }
-      } else if (this.context) {
-        this.page = await this.context.newPage();
+        return;
+      } catch (err: any) {
+        logStatus(`Stale browser context detected (${err.message || err}). Cleaning up and opening fresh browser...`);
+        await this.closeBrowser();
       }
-      return;
     }
 
     // If browser is active but it is for a different PAN, close it first
@@ -46,28 +50,58 @@ export class BrowserManager {
       await this.closeBrowser();
     }
 
-    const args = ['--disable-blink-features=AutomationControlled'];
+    const args = [
+      '--start-maximized',
+      '--disable-blink-features=AutomationControlled',
+      '--disable-session-crashed-bubble',
+      '--disable-infobars',
+      '--no-default-browser-check',
+      '--restore-last-session=false'
+    ];
 
     if (pan) {
       const userDataDir = path.resolve(process.cwd(), 'automation', '.user_data', pan);
-      logStatus(`Launching persistent browser context: ${userDataDir}`);
+      logStatus(`Launching persistent browser context (maximized): ${userDataDir}`);
       
       this.context = await chromium.launchPersistentContext(userDataDir, {
         headless: false,
+        viewport: null,
         args
       });
+      
+      this.context.on('close', () => {
+        logStatus(`Persistent browser context for PAN ${pan} closed.`);
+        this.browser = null;
+        this.context = null;
+        this.page = null;
+        this.isPersistent = false;
+        this.currentPan = '';
+      });
+
       this.browser = this.context.browser();
       const pages = this.context.pages();
       this.page = pages.length > 0 ? pages[0] : await this.context.newPage();
       this.isPersistent = true;
       this.currentPan = pan;
     } else {
-      logStatus('Launching default browser context...');
+      logStatus('Launching default browser context (maximized)...');
       this.browser = await chromium.launch({
         headless: false,
         args
       });
-      this.context = await this.browser.newContext();
+      this.context = await this.browser.newContext({
+        viewport: null
+      });
+      
+      this.context.on('close', () => {
+        logStatus('Default browser context closed.');
+        this.browser = null;
+        this.context = null;
+        this.page = null;
+        this.isPersistent = false;
+        this.currentPan = '';
+      });
+
       this.page = await this.context.newPage();
       this.isPersistent = false;
       this.currentPan = '';

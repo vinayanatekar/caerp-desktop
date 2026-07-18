@@ -85,4 +85,26 @@ export class TauriService {
     }
     return await invoke('get_client', { id });
   }
+
+  async searchGoogleUser(userId: number): Promise<Array<{ title: string; link: string; snippet: string }>> {
+    if (!this.isTauriAvailable()) {
+      console.warn('Tauri is not available. Using mock searchGoogleUser.');
+      // Mock top 10 search results for testing interface
+      const client = await this.getClient(userId);
+      const name = client ? client.name : 'VINAYA SUDHAKAR NATEKAR';
+      return [
+        { title: `${name} - Professional Profile & Summary | LinkedIn`, link: 'https://www.linkedin.com/in/vinaya-natekar', snippet: `View ${name}'s professional profile, tax credentials, work experience, and educational background on LinkedIn.` },
+        { title: `${name} - Public Directory Record & Contacts`, link: 'https://www.directory.com/people/vinaya-natekar', snippet: `Public directory profile, contact details, and business index for ${name}.` },
+        { title: `CA ${name} - Tax Consultant & Financial Advisor`, link: 'https://www.taxconsultants.in/ca-vinaya-natekar', snippet: `Chartered Accountant providing compliance, tax filing, audit, and GST advisory services.` },
+        { title: `${name} - Official Corporate Director Filings`, link: 'https://www.zaubacorp.com/person/VINAYA-SUDHAKAR-NATEKAR', snippet: `Director identification numbers, company associations, and official corporate filings for ${name}.` },
+        { title: `${name} - GitHub Repositories & Open Source`, link: 'https://github.com/vinayanatekar', snippet: `GitHub profile showcasing open-source projects, automation scripts, and software contributions by ${name}.` },
+        { title: `${name} - Articles & Financial Insights on Medium`, link: 'https://medium.com/@vinayanatekar', snippet: `Read thought leadership articles on taxation, technology, and compliance authored by ${name}.` },
+        { title: `${name} - Speaker & Presenter Profile`, link: 'https://www.techcon.org/speakers/vinaya-natekar', snippet: `Keynote speaker bio, session slides, and panel discussion archive for ${name}.` },
+        { title: `${name} - Research & Academic Papers`, link: 'https://www.researchgate.net/profile/Vinaya-Natekar', snippet: `Academic publications, citation metrics, and peer-reviewed research papers authored by ${name}.` },
+        { title: `${name} - Legal & Tax Registration Records`, link: 'https://www.gstsuvidha.in/taxpayer/BEVPN1882D', snippet: `Taxpayer identification status and compliance history registered under ${name}.` },
+        { title: `${name} - Industry News & Press Releases`, link: 'https://www.financialexpress.com/topics/vinaya-natekar', snippet: `Press mentions, opinion pieces, and financial news coverage referencing ${name}.` }
+      ];
+    }
+    return await invoke('search_google_user', { userId });
+  }
 }

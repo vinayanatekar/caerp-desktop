@@ -4,6 +4,7 @@ import { handleLogin } from './portal';
 import { checkSession } from './session';
 import { navigateToAIS } from './ais';
 import { navigateToTIS } from './tis';
+import { searchGoogleUser } from './googleSearch';
 import { logStatus, logSuccess, logError } from './helpers';
 
 const PORT = 30100;
@@ -50,15 +51,61 @@ async function main() {
             throw new Error("Failed to initialize Playwright browser workspace.");
           }
 
-          // Go to login page
-          await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/login', {
+          logStatus("Navigating to Income Tax main portal entry point (https://eportal.incometax.gov.in)...");
+          await page.goto('https://eportal.incometax.gov.in', {
             waitUntil: 'domcontentloaded'
           });
+          await page.waitForTimeout(1500);
 
           // Check if session is already valid
           const isLoggedIn = await checkSession(page);
 
           if (!isLoggedIn) {
+            logStatus("Unauthenticated session. Resetting storage, IndexedDB, and cookies before launching fresh login session...");
+            try {
+              // Clear local storage, session storage, and IndexedDB BEFORE navigating to fresh login route
+              await page.evaluate(async () => {
+                try {
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  if (window.indexedDB && window.indexedDB.databases) {
+                    const dbs = await window.indexedDB.databases();
+                    for (const db of dbs) {
+                      if (db.name) window.indexedDB.deleteDatabase(db.name);
+                    }
+                  }
+                } catch (e) {}
+              });
+              await context.clearCookies();
+              await page.waitForTimeout(500);
+
+              // Navigate directly to the base login route
+              logStatus("Navigating to login URL (https://eportal.incometax.gov.in/iec/foservices/#/login)...");
+              await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/login', {
+                waitUntil: 'domcontentloaded'
+              });
+              await page.waitForTimeout(1500);
+
+              // Check if redirected to sessionExpire URL or banner is displayed
+              if (page.url().includes('sessionExpire') || page.url().includes('session-expired') || (await page.locator('text=Session has Expired').count() > 0)) {
+                logStatus("Detected 'Session has Expired' page (https://eportal.incometax.gov.in/iec/foservices/#/sessionExpire)");
+                const loginLink = page.locator('a:has-text("Login"), a[href*="login"], p:has-text("Click here to") a').first();
+                if (await loginLink.isVisible({ timeout: 5000 })) {
+                  logStatus("Clicking 'Login' hyperlink on Session Expired page...");
+                  await loginLink.click({ force: true });
+                  await page.waitForTimeout(1500);
+                } else {
+                  logStatus("Navigating from sessionExpire back to login route...");
+                  await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/login', {
+                    waitUntil: 'domcontentloaded'
+                  });
+                  await page.waitForTimeout(1500);
+                }
+              }
+            } catch (e: any) {
+              logStatus("Session reset note: " + (e.message || e));
+            }
+
             // Execute automated login flow
             await handleLogin(page, pan, password);
           } else {
@@ -67,7 +114,7 @@ async function main() {
 
           // Direct routing based on target parameter
           if (target === 'ais') {
-            await navigateToAIS(context, page);
+            await navigateToAIS(context, page, pan);
           } else if (target === 'tis') {
             await navigateToTIS(context, page);
           } else if (target === '26as') {
@@ -95,7 +142,11 @@ async function main() {
             await tracesPage.waitForLoadState('domcontentloaded');
             logSuccess("Form 26AS (TRACES) workspace opened successfully.");
           } else {
-            logSuccess("Income Tax Portal dashboard loaded.");
+            logStatus("Navigating to target page (https://eportal.incometax.gov.in/iec/foservices/#/dashboard/fileIncomeTaxReturn)...");
+            await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/dashboard/fileIncomeTaxReturn', {
+              waitUntil: 'domcontentloaded'
+            });
+            logSuccess("Income Tax Return file page loaded successfully.");
           }
 
           res.writeHead(200);
@@ -125,7 +176,7 @@ async function main() {
             throw new Error("Failed to get page from BrowserManager");
           }
           
-          await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/login', {
+          await page.goto('https://eportal.incometax.gov.in/iec/foservices/#/dashboard', {
             waitUntil: 'domcontentloaded'
           });
           
@@ -137,6 +188,34 @@ async function main() {
           logError(`Check session failed: ${err.message || err}`);
           res.writeHead(500);
           res.end(JSON.stringify({ status: 'error', error: err.message || err }));
+        }
+      });
+    } else if (req.method === 'POST' && req.url === '/search_google') {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      
+      req.on('end', async () => {
+        try {
+          const data = JSON.parse(body);
+          const { name, pan } = data;
+          
+          logStatus(`Received Google search request for user: "${name}"`);
+          const results = await searchGoogleUser(name);
+          
+          const resBody = JSON.stringify({ status: 'success', results });
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Content-Length', Buffer.byteLength(resBody));
+          res.writeHead(200);
+          res.end(resBody);
+        } catch (err: any) {
+          console.error(`Google search error: ${err.message || err}`);
+          const errBody = JSON.stringify({ status: 'error', error: err.message || err });
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Content-Length', Buffer.byteLength(errBody));
+          res.writeHead(500);
+          res.end(errBody);
         }
       });
     } else if (req.method === 'POST' && req.url === '/close') {
